@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Generator Nama Indonesia</title>
+  <style>
+    :root{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;}
+    body{margin:0;background:linear-gradient(135deg,#f8fafc,#eef2ff);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;flex-direction:column}
+    .card{width:100%;max-width:820px;background:white;border-radius:12px;box-shadow:0 8px 30px rgba(20,24,60,0.08);padding:20px;margin-bottom:20px}
+    h1{margin:0 0 8px;font-size:20px}
+    p.lead{margin:0 0 18px;color:#475569}
+    .controls{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+    label{display:flex;flex-direction:column;font-size:13px;color:#0f172a}
+    select,input[type=number]{padding:8px 10px;border-radius:8px;border:1px solid #e6edf3;min-width:160px}
+    button{background:#0ea5a4;color:white;border:none;padding:10px 14px;border-radius:10px;cursor:pointer}
+    button.secondary{background:#f1f5f9;color:#0f172a;border:1px solid #e6edf3}
+    .results{margin-top:12px}
+    ul.names{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+    li.name{background:#f8fafc;padding:10px;border-radius:8px;border:1px solid #eef2ff;display:flex;justify-content:space-between;align-items:center}
+    .small{font-size:13px;color:#334155}
+    .actions{display:flex;gap:8px}
+    footer{font-size:14px;color:#64748b;text-align:center;margin-top:8px}
+    footer span{font-weight:600;color:#0ea5a4}
+    @media (max-width:520px){.controls{flex-direction:column}}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Generator Nama Indonesia</h1>
+    <p class="lead">Buat nama manusia Indonesia secara acak. Pilih jenis kelamin <strong>Cewe</strong> atau <strong>Cowo</strong>, jumlah nama, lalu tekan <em>Generate</em>.</p>
+
+    <div class="controls">
+      <label>
+        Jenis kelamin
+        <select id="gender">
+          <option value="any">Acak (Cewe / Cowo)</option>
+          <option value="female">Cewe</option>
+          <option value="male">Cowo</option>
+        </select>
+      </label>
+
+      <label>
+        Jumlah nama
+        <input id="count" type="number" min="1" max="200" value="10" />
+      </label>
+
+      <label>
+        Format nama
+        <select id="format">
+          <option value="full">Nama lengkap (Nama Depan + Nama Tengah + Nama Belakang)</option>
+          <option value="two">Nama 2 kata (Nama Depan + Nama Belakang)</option>
+          <option value="first">Nama depan saja</option>
+        </select>
+      </label>
+
+      <div style="display:flex;align-items:end;gap:8px">
+        <button id="generate">Generate</button>
+        <button id="copy" class="secondary">Salin semua</button>
+        <button id="download" class="secondary">Download CSV</button>
+      </div>
+    </div>
+
+    <div class="results">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="small">Hasil (<span id="result-count">0</span>)</div>
+        <div class="small">Sumber: kumpulan nama umum Indonesia (nama manusia nyata, kombinasi acak)</div>
+      </div>
+
+      <ul id="names" class="names"></ul>
+    </div>
+  </div>
+
+  <footer>
+    Dibuat oleh <span>NEBULA STUDIO</span>
+  </footer>
+
+  <script>
+    const maleFirst = [
+      'Ahmad','Budi','Agus','Rizky','Slamet','Eko','Rian','Dedi','Wahyudi','Hardi',
+      'Fajar','Yusuf','Iwan','Gunawan','Joko','Andi','Faisal','Bagus','Rifai','Sandi',
+      'Arif','Yoga','Rizal','Rendy','Teguh','Anton','Rama','Galih','Bayu','Surya',
+      'Hendra','Miftah','Galuh','Dimas','Sukmawan','Lukman','Imam','Rizwan','Nur','Hadi'
+    ];
+
+    const femaleFirst = [
+      'Siti','Dewi','Rina','Ayu','Nina','Wulan','Rita','Maya','Indah','Sari',
+      'Lestari','Rini','Yuni','Fitri','Intan','Nadia','Putri','Sri','Melati','Citra',
+      'Meli','Ratna','Erna','Dina','Anisa','Kirana','Farah','Vina','Hesti','Bella',
+      'Nadia','Lili','Hana','Aisha','Novi','Putraida','Intan','Nabila','Yulia','Rahayu'
+    ];
+
+    const lastNames = [
+      'Santoso','Wijaya','Pratama','Saputra','Putra','Halim','Rahman','Kusuma','Susanto','Prasetyo',
+      'Suryadi','Hartono','Maulana','Nasution','Lubis','Syahputra','Gunawan','Hidayat','Purnama','Wibowo',
+      'Ramadhan','Siregar','Hasibuan','Santika','Utama','Aditya','Sari','Wijanarko','Prabowo','Setiawan',
+      'Harahap','Kurniawan','Lestari','Prakoso','Indrawan','Anggraini','Fadillah','Amrullah','Permata','Nuraini'
+    ];
+
+    const middleNames = [
+      'Putra','Putri','Bin','Binti','Anak','Adji','Aulia','Rahma','Nugraha','Saputra',
+      'Hadi','Wijaya','Santoso','Pratama','Kusuma','Jaya','Prima','Mawardi','Sakti','Bahar'
+    ];
+
+    const el = id => document.getElementById(id);
+
+    function rand(arr){
+      return arr[Math.floor(Math.random()*arr.length)];
+    }
+
+    function generateOne(gender, fmt){
+      let first;
+      if(gender === 'female') first = rand(femaleFirst);
+      else if(gender === 'male') first = rand(maleFirst);
+      else first = Math.random()<0.5 ? rand(maleFirst) : rand(femaleFirst);
+
+      if(fmt === 'first') return first;
+      const last = rand(lastNames);
+      if(fmt === 'two') return first + ' ' + last;
+
+      const useMiddle = Math.random() < 0.65;
+      if(!useMiddle) return first + ' ' + last;
+
+      const middle = Math.random() < 0.12 ? (Math.random()<0.5 ? 'bin' : 'binti') + ' ' + (Math.random()<0.5 ? rand(maleFirst) : rand(femaleFirst)) : rand(middleNames);
+      return first + ' ' + middle + ' ' + last;
+    }
+
+    function generate(){
+      const gender = el('gender').value;
+      let count = parseInt(el('count').value) || 1;
+      if(count < 1) count = 1;
+      if(count > 500) count = 500;
+      const fmt = el('format').value;
+      const container = el('names');
+      container.innerHTML = '';
+      const results = [];
+      for(let i=0;i<count;i++){
+        let name = generateOne(gender, fmt);
+        let tries = 0;
+        while(results.includes(name) && tries < 6){ name = generateOne(gender, fmt); tries++; }
+        results.push(name);
+
+        const li = document.createElement('li'); li.className='name';
+        const divText = document.createElement('div'); divText.innerHTML = '<div style="font-weight:600">'+name+'</div><div class="small">'+(fmt==='first'? 'Nama depan' : (fmt==='two'? 'Nama 2 kata' : 'Nama lengkap'))+'</div>';
+        const actions = document.createElement('div'); actions.className='actions';
+        const copyBtn = document.createElement('button'); copyBtn.className='secondary'; copyBtn.textContent='Salin'; copyBtn.addEventListener('click',()=>{navigator.clipboard.writeText(name); copyBtn.textContent='Disalin!'; setTimeout(()=>copyBtn.textContent='Salin',900)});
+        actions.appendChild(copyBtn);
+        li.appendChild(divText); li.appendChild(actions);
+        container.appendChild(li);
+      }
+      el('result-count').textContent = results.length;
+      el('copy').dataset.text = results.join('\n');
+      el('download').dataset.csv = results.map(r=> '"'+r.replace(/"/g,'""')+'"').join('\n');
+    }
+
+    document.getElementById('generate').addEventListener('click', generate);
+    document.getElementById('copy').addEventListener('click', ()=>{
+      const t = document.getElementById('copy').dataset.text || '';
+      if(!t) return alert('Belum ada hasil. Tekan Generate dulu.');
+      navigator.clipboard.writeText(t).then(()=>{ alert('Semua nama disalin ke clipboard.'); });
+    });
+    document.getElementById('download').addEventListener('click', ()=>{
+      const csv = document.getElementById('download').dataset.csv || '';
+      if(!csv) return alert('Belum ada hasil untuk didownload. Tekan Generate dulu.');
+      const blob = new Blob([csv], {type: 'text/csv'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'nama_indonesia.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    });
+
+    generate();
+  </script>
+</body>
+</html>
